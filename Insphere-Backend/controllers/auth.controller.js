@@ -1,4 +1,4 @@
-import { supabase } from "../services/supabaseClient.js";
+import { supabaseAdmin } from "../services/supabaseClient.js";
 
 export const oauthCallback = async (req, res) => {
   try {
@@ -13,7 +13,7 @@ export const oauthCallback = async (req, res) => {
     const fullName = user.user_metadata?.full_name || "";
 
     // Check if user already exists using auth_user_id
-    const { data: existingUser } = await supabase
+    const { data: existingUser } = await supabaseAdmin
       .from("users")
       .select("*")
       .eq("auth_user_id", authUserId)
@@ -21,7 +21,7 @@ export const oauthCallback = async (req, res) => {
 
     // Create user if not exists
     if (!existingUser) {
-      const { error } = await supabase.from("users").insert({
+      const { error } = await supabaseAdmin.from("users").insert({
         auth_user_id: authUserId,
         email,
         name: fullName,

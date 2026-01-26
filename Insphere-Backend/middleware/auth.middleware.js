@@ -9,9 +9,11 @@ export const authMiddleware = async (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
+    console.log("Token received:", token ? "present" : "missing");
 
     // Verify token with Supabase
     const { data, error } = await supabase.auth.getUser(token);
+    console.log("Auth result:", { data: data ? "user found" : "no user", error });
 
     if (error || !data?.user) {
       return res.status(401).json({ message: "Unauthorized" });

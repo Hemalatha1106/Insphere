@@ -17,7 +17,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/communities', communityRoutes);
-app.use("/profile", profileRoutes);
+app.use("/api/profile", profileRoutes);
 
 app.get('/', (req, res) => {
   res.send('Insphere backend is running 🚀');
