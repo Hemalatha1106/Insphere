@@ -5,6 +5,8 @@ import cors from 'cors';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import communityRoutes from './routes/community.routes.js';
+import profileRoutes from "./routes/profile.routes.js";
+
 
 dotenv.config();
 
@@ -15,6 +17,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/communities', communityRoutes);
+app.use("/profile", profileRoutes);
 
 app.get('/', (req, res) => {
   res.send('Insphere backend is running 🚀');
