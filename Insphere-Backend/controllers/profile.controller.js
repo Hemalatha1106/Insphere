@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../services/supabaseClient.js";
+import refreshUserStats from "../services/aggregator.service.js";
 
 export const setupProfile = async (req, res) => {
   try {
@@ -72,6 +73,134 @@ export const setupProfile = async (req, res) => {
     console.log("User update result:", userUpdateResult);
 
     res.json({ message: "Profile setup completed" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const authUserId = req.user.id;
+    const { github_username, leetcode_username, codeforces_username } = req.body;
+
+    // Get user from users table
+    const { data: user, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("auth_user_id", authUserId)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userId = user.id;
+
+    // Fetch existing profile to preserve required fields
+    const { data: existingProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    if (existingProfile) {
+      // Update only usernames, preserve other fields
+      const { data: profile, error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .update({
+          github_username: github_username || null,
+          leetcode_username: leetcode_username || null,
+          codeforces_username: codeforces_username || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", userId)
+        .select()
+        .single();
+
+      if (profileError) {
+        return res.status(500).json({ error: profileError.message });
+      }
+
+      res.json({ message: "Profile usernames updated successfully", profile });
+    } else {
+      // No existing profile - need to create with required fields
+      return res.status(400).json({ 
+        error: "Profile does not exist. Please use POST /api/profile/setup first with full profile data."
+      });
+    }
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const syncProfile = async (req, res) => {
+  try {
+    const authUserId = req.user.id;
+
+    // Get user from users table
+    const { data: user, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("auth_user_id", authUserId)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userId = user.id;
+
+    // Trigger sync via aggregator service
+    const result = await refreshUserStats(userId);
+
+    if (!result.success) {
+      return res.status(500).json({ error: "Failed to sync profile", details: result.error });
+    }
+
+    res.json({ message: "Profile synced successfully", data: result.data });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getMyProfile = async (req, res) => {
+  try {
+    const authUserId = req.user.id;
+
+    // Get user from users table
+    const { data: user, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("auth_user_id", authUserId)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userId = user.id;
+
+    // Get profile data
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    // Get platform stats
+    const { data: stats, error: statsError } = await supabaseAdmin
+      .from("platform_stats")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    res.json({
+      profile: profile || null,
+      stats: stats || null
+    });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
