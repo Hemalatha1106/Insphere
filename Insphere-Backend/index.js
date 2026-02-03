@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import communityRoutes from './routes/community.routes.js';
 import profileRoutes from "./routes/profile.routes.js";
+import leaderboardRoutes from './routes/leaderboard.routes.js';
 
 // Import Scheduler (Notice the .js extension and import syntax)
 import initScheduler from './services/scheduler.js';
@@ -27,6 +28,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/communities', communityRoutes);
 app.use("/api/profile", profileRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 
 app.get('/', (req, res) => {
   res.send('Insphere backend is running 🚀');

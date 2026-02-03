@@ -82,7 +82,14 @@ export const setupProfile = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const authUserId = req.user.id;
-    const { github_username, leetcode_username, codeforces_username } = req.body;
+    // 1. ADD GFG AND HACKERRANK HERE
+    const { 
+      github_username, 
+      leetcode_username, 
+      codeforces_username, 
+      geeksforgeeks_username, 
+      hackerrank_username 
+    } = req.body;
 
     // Get user from users table
     const { data: user, error: userError } = await supabaseAdmin
@@ -97,7 +104,7 @@ export const updateProfile = async (req, res) => {
 
     const userId = user.id;
 
-    // Fetch existing profile to preserve required fields
+    // Fetch existing profile
     const { data: existingProfile } = await supabaseAdmin
       .from("profiles")
       .select("*")
@@ -105,13 +112,15 @@ export const updateProfile = async (req, res) => {
       .single();
 
     if (existingProfile) {
-      // Update only usernames, preserve other fields
+      // 2. ADD THEM TO THE UPDATE OBJECT HERE
       const { data: profile, error: profileError } = await supabaseAdmin
         .from("profiles")
         .update({
-          github_username: github_username || null,
-          leetcode_username: leetcode_username || null,
-          codeforces_username: codeforces_username || null,
+          github_username: github_username || existingProfile.github_username,
+          leetcode_username: leetcode_username || existingProfile.leetcode_username,
+          codeforces_username: codeforces_username || existingProfile.codeforces_username,
+          geeksforgeeks_username: geeksforgeeks_username || existingProfile.geeksforgeeks_username,
+          hackerrank_username: hackerrank_username || existingProfile.hackerrank_username,
           updated_at: new Date().toISOString()
         })
         .eq("user_id", userId)
@@ -124,9 +133,8 @@ export const updateProfile = async (req, res) => {
 
       res.json({ message: "Profile usernames updated successfully", profile });
     } else {
-      // No existing profile - need to create with required fields
       return res.status(400).json({ 
-        error: "Profile does not exist. Please use POST /api/profile/setup first with full profile data."
+        error: "Profile does not exist. Please use POST /api/profile/setup first."
       });
     }
 
